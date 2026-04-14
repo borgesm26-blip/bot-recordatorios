@@ -1,0 +1,25 @@
+# Secretos y credenciales — NUNCA subir a Git
+.env
+token.json
+credentials.json
+railway_env_vars.txt
+*.json
+
+# Base de datos local
+reminders.db
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
