@@ -29,7 +29,7 @@ def is_gemini_available() -> bool:
     return MODEL is not None and API_KEY != ''
 
 
-async def ask_assistant(question: str, context: Optional[dict] = None) -> Optional[str]:
+def ask_assistant(question: str, context: Optional[dict] = None) -> Optional[str]:
     """
     Asistente inteligente: responde preguntas sobre tareas, notas, etc.
 
@@ -79,7 +79,7 @@ Responde de forma breve, amigable y útil. Si la pregunta está relacionada con 
         return None
 
 
-async def parse_natural_language(user_input: str) -> Optional[dict]:
+def parse_natural_language(user_input: str) -> Optional[dict]:
     """
     Procesa lenguaje natural para extraer información de tareas.
 
@@ -139,7 +139,7 @@ SOLO devuelve el JSON, sin explicaciones."""
         return None
 
 
-async def summarize_tasks(reminders: list) -> Optional[str]:
+def summarize_tasks(reminders: list) -> Optional[str]:
     """
     Resumen inteligente de tareas pendientes.
 
@@ -173,7 +173,7 @@ Resumen (máximo 3 líneas):"""
         return None
 
 
-async def analyze_notes(notes: list) -> Optional[str]:
+def analyze_notes(notes: list) -> Optional[str]:
     """
     Análisis inteligente de notas guardadas.
 
@@ -207,7 +207,7 @@ Análisis breve (máximo 3 líneas):"""
         return None
 
 
-async def categorize_task(title: str) -> Optional[str]:
+def categorize_task(title: str) -> Optional[str]:
     """
     Sugerir categoría/prioridad para una tarea.
 

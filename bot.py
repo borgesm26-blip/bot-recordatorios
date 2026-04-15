@@ -1361,7 +1361,7 @@ async def cmd_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("⏳ Procesando tu pregunta...", parse_mode='Markdown')
 
-    answer = await ask_assistant(question, context_data)
+    answer = ask_assistant(question, context_data)
 
     if answer:
         await update.message.reply_text(f"🤖 *Respuesta:*\n\n{answer}", parse_mode='Markdown')
@@ -1389,10 +1389,10 @@ async def cmd_analizar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     notes_summary = None
 
     if reminders:
-        tasks_summary = await summarize_tasks(reminders)
+        tasks_summary = summarize_tasks(reminders)
 
     if notes:
-        notes_summary = await analyze_notes(notes)
+        notes_summary = analyze_notes(notes)
 
     response = "📊 *Análisis Inteligente:*\n\n"
 
