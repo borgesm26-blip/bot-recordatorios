@@ -1474,7 +1474,6 @@ def build_app() -> Application:
 
             CONFIRMING: [
                 CallbackQueryHandler(cb_confirm, pattern='^confirm_'),
-                MessageHandler(filters.TEXT & ~filters.COMMAND, recv_time),
             ],
 
             BDAY_NAME: [
