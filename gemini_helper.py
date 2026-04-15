@@ -21,8 +21,8 @@ logger.info(f"GEMINI_API_KEY configurada: {bool(API_KEY)}")
 if API_KEY and len(API_KEY) > 10:  # Verificar que sea una clave válida
     try:
         genai.configure(api_key=API_KEY)
-        MODEL = genai.GenerativeModel('gemini-pro')
-        logger.info("Gemini configurado correctamente")
+        MODEL = genai.GenerativeModel('gemini-1.5-pro')
+        logger.info("Gemini configurado correctamente con modelo gemini-1.5-pro")
     except Exception as e:
         logger.error(f"Error configurando Gemini: {e}")
         MODEL = None
