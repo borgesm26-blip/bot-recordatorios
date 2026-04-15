@@ -34,7 +34,9 @@ else:
 
 def is_gemini_available() -> bool:
     """Verifica si Gemini está disponible."""
-    return MODEL is not None and API_KEY != ''
+    # Temporalmente desactivado debido a problemas de disponibilidad de modelo
+    return False
+    # return MODEL is not None and API_KEY != ''
 
 
 def ask_assistant(question: str, context: Optional[dict] = None) -> Optional[str]:

@@ -183,33 +183,48 @@ class GoogleDocs:
         Returns:
             True si se guardó exitosamente, False si no
         """
+        logger.info("add_note() llamado con título: %s", title)
+
         if not self.is_authorized():
-            logger.warning("No autorizado para acceder a Google Docs")
+            logger.error("❌ No autorizado para acceder a Google Docs")
             return False
 
         if not self.doc_id:
+            logger.info("doc_id no existe, intentando obtener/crear...")
             self.get_or_create_notes_doc()
 
         if not self.doc_id:
-            logger.error("No se pudo obtener/crear documento de notas")
+            logger.error("❌ No se pudo obtener/crear documento de notas")
             return False
+
+        logger.info("✅ Usando doc_id: %s", self.doc_id)
 
         try:
             # Formato de la nota
             timestamp = datetime.now().strftime('%d/%m/%Y %H:%M')
 
+            # Limitar contenido a 5000 caracteres (Google Docs limit)
+            content_limited = content[:5000] if content else ''
+
             note_text = f"\n📌 {title}\n"
-            if content:
-                note_text += f"   {content}\n"
+            if content_limited:
+                note_text += f"   {content_limited}\n"
             note_text += f"   [Guardado: {timestamp}]\n"
             note_text += "-" * 40 + "\n"
 
-            self._append_to_doc(note_text)
-            logger.info("Nota agregada a Google Docs: %s", title)
-            return True
+            success = self._append_to_doc(note_text)
 
-        except HttpError as e:
-            logger.error("Error agregando nota a Docs: %s", e)
+            if success:
+                logger.info("✅ Nota agregada a Google Docs: %s", title)
+                return True
+            else:
+                logger.error("❌ _append_to_doc retornó False")
+                return False
+
+        except Exception as e:
+            logger.error("❌ Error agregando nota a Docs: %s (tipo: %s)", e, type(e).__name__)
+            import traceback
+            logger.error("Traceback: %s", traceback.format_exc())
             return False
 
     def _append_to_doc(self, text: str) -> bool:
