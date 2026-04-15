@@ -15,13 +15,20 @@ import google.generativeai as genai
 logger = logging.getLogger(__name__)
 
 # Configurar Gemini
-API_KEY = os.getenv('GEMINI_API_KEY', '')
-if API_KEY:
-    genai.configure(api_key=API_KEY)
-    MODEL = genai.GenerativeModel('gemini-pro')
+API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
+logger.info(f"GEMINI_API_KEY configurada: {bool(API_KEY)}")
+
+if API_KEY and len(API_KEY) > 10:  # Verificar que sea una clave válida
+    try:
+        genai.configure(api_key=API_KEY)
+        MODEL = genai.GenerativeModel('gemini-pro')
+        logger.info("Gemini configurado correctamente")
+    except Exception as e:
+        logger.error(f"Error configurando Gemini: {e}")
+        MODEL = None
 else:
     MODEL = None
-    logger.warning("GEMINI_API_KEY no configurada")
+    logger.warning(f"GEMINI_API_KEY no configurada o inválida. Longitud: {len(API_KEY)}")
 
 
 def is_gemini_available() -> bool:
@@ -40,7 +47,10 @@ def ask_assistant(question: str, context: Optional[dict] = None) -> Optional[str
     Returns:
         Respuesta de Gemini o None si hay error
     """
+    logger.info(f"ask_assistant llamado. Gemini disponible: {is_gemini_available()}")
+
     if not is_gemini_available():
+        logger.error("Gemini no está disponible")
         return None
 
     try:
