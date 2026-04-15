@@ -64,15 +64,24 @@ PREGUNTA DEL USUARIO: {question}
 
 Responde de forma breve, amigable y útil. Si la pregunta está relacionada con sus tareas/notas, usa la información anterior."""
 
-        response = MODEL.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=500,
-                temperature=0.7,
+        try:
+            response = MODEL.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=500,
+                    temperature=0.7,
+                )
             )
-        )
 
-        return response.text if response else None
+            if response and hasattr(response, 'text') and response.text:
+                return response.text.strip()
+            else:
+                logger.warning(f"Respuesta vacía de Gemini: {response}")
+                return None
+
+        except Exception as inner_e:
+            logger.error(f"Error llamando a Gemini API: {inner_e}")
+            return None
 
     except Exception as e:
         logger.error(f"Error en ask_assistant: {e}")
