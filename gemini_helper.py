@@ -21,14 +21,9 @@ logger.info(f"GEMINI_API_KEY configurada: {bool(API_KEY)}")
 if API_KEY and len(API_KEY) > 10:  # Verificar que sea una clave válida
     try:
         genai.configure(api_key=API_KEY)
-        # Intentar con el modelo más reciente disponible
-        try:
-            MODEL = genai.GenerativeModel('gemini-2.0-flash')
-            logger.info("Gemini configurado con gemini-2.0-flash")
-        except:
-            # Fallback a gemini-1.5-flash si flash no existe
-            MODEL = genai.GenerativeModel('gemini-1.5-flash')
-            logger.info("Gemini configurado con gemini-1.5-flash")
+        # Usar gemini-1.5-flash (mejor para plan gratuito, más económico)
+        MODEL = genai.GenerativeModel('gemini-1.5-flash')
+        logger.info("Gemini configurado con gemini-1.5-flash (modelo económico)")
     except Exception as e:
         logger.error(f"Error configurando Gemini: {e}")
         MODEL = None
