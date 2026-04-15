@@ -939,9 +939,11 @@ async def _confirm_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton("❌ Cancelar", callback_data="confirm_no"),
         ]
     ])
+    # No usar parse_mode si el contenido tiene URLs u caracteres especiales
+    # Telegram no puede parsear markdown con URLs correctamente
     await update.effective_message.reply_text(
-        f"📝 *Nota:* {title}\n\n¿Guardamos?",
-        parse_mode='Markdown', reply_markup=kb
+        f"📝 Nota: {title}\n\n¿Guardamos?",
+        reply_markup=kb
     )
     return CONFIRMING
 
