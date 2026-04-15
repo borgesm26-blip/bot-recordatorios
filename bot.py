@@ -1525,9 +1525,6 @@ def build_app() -> Application:
     app.add_handler(CommandHandler('notas',     cmd_notas))
     app.add_handler(CommandHandler('cumples',   cmd_cumples))
     app.add_handler(CommandHandler('auth',      cmd_auth))
-    app.add_handler(CommandHandler('pregunta',  cmd_pregunta))
-    app.add_handler(CommandHandler('analizar',  cmd_analizar))
-    app.add_handler(CommandHandler('gemini_help', cmd_gemini_help))
 
     # Callbacks del menú principal y de "completado"
     app.add_handler(CallbackQueryHandler(cb_done,      pattern='^done_'))
@@ -1563,9 +1560,6 @@ async def set_commands(app: Application):
         BotCommand('notas',        'Ver tus notas'),
         BotCommand('buscar',       'Buscar en notas'),
         BotCommand('cumples',      'Cumpleaños próximos'),
-        BotCommand('pregunta',     '🤖 Asistente inteligente'),
-        BotCommand('analizar',     '📊 Análisis de productividad'),
-        BotCommand('gemini_help',  '🤖 Ayuda de Gemini'),
         BotCommand('auth',         'Conectar con Google'),
         BotCommand('ayuda',        'Ayuda'),
     ])
