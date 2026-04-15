@@ -924,15 +924,20 @@ async def recv_time(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def recv_note_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
-    # Si el título ya fue guardado (flujo nueva→nota), usar texto como contenido
-    if 'title' not in context.user_data:
-        context.user_data['title'] = text
-    context.user_data['note_content'] = text
+    # Para notas: el usuario solo proporciona contenido, sin titulo separado
+    # Guardamos el contenido en 'note_content' y dejamos titulo vacío
+    context.user_data['title'] = ''  # Sin titulo
+    context.user_data['note_content'] = text  # Solo el contenido
     return await _confirm_note(update, context)
 
 
 async def _confirm_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    title = context.user_data.get('title', '(sin título)')
+    title = context.user_data.get('title', '')
+    content = context.user_data.get('note_content', '')
+
+    # Mostrar el contenido (o titulo si existe)
+    display_text = content if content else title
+
     kb = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("✅ Guardar", callback_data="confirm_yes"),
@@ -942,7 +947,7 @@ async def _confirm_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # No usar parse_mode si el contenido tiene URLs u caracteres especiales
     # Telegram no puede parsear markdown con URLs correctamente
     await update.effective_message.reply_text(
-        f"📝 Nota: {title}\n\n¿Guardamos?",
+        f"📝 Nota:\n{display_text}\n\n¿Guardamos?",
         reply_markup=kb
     )
     return CONFIRMING
@@ -1011,17 +1016,20 @@ async def cb_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     dt    = ud.get('datetime')
 
     if rtype == 'note':
-        note_id = db.add_note(title=title, content=ud.get('note_content', ''))
+        # Para notas: si no hay titulo, usa el contenido como titulo
+        note_title = title if title else ud.get('note_content', '')
+        note_content = '' if not title else ud.get('note_content', '')
+
+        note_id = db.add_note(title=note_title, content=note_content)
 
         # Guardar también en Google Docs si está disponible
         if google_docs and google_docs.is_authorized():
-            content = ud.get("note_content", "")
-            google_docs.add_note(title=title, content=content)
+            google_docs.add_note(title=note_title, content=note_content)
             docs_status = " y en Google Docs"
         else:
             docs_status = ""
         await query.edit_message_text(
-            f"✅ Nota guardada en BD{docs_status}.\n📒 *{title}* (#{note_id})",
+            f"✅ Nota guardada en BD{docs_status}.\n📒 *{note_title}* (#{note_id})",
             parse_mode='Markdown'
         )
         context.user_data.clear()
