@@ -44,6 +44,14 @@ load_dotenv()
 from db import Database
 from google_services import GoogleServices
 from google_docs import GoogleDocs
+from gemini_helper import (
+    is_gemini_available,
+    ask_assistant,
+    parse_natural_language,
+    summarize_tasks,
+    analyze_notes,
+    categorize_task,
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURACIÓN
@@ -1315,6 +1323,112 @@ async def cmd_auth(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# COMANDOS CON GEMINI (ASISTENTE INTELIGENTE)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+async def cmd_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Asistente inteligente: responde preguntas sobre tareas y notas."""
+    if not authorized(update):
+        return await deny(update)
+
+    if not is_gemini_available():
+        await update.message.reply_text(
+            "❌ Gemini no está configurado. Verifica que GEMINI_API_KEY esté en el .env"
+        )
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "🤖 *Asistente Inteligente*\n\n"
+            "Uso: `/pregunta ¿Qué tareas tengo pendientes?`\n\n"
+            "Puedo responder preguntas sobre tus tareas, notas y cumpleaños.",
+            parse_mode='Markdown'
+        )
+        return
+
+    question = ' '.join(context.args)
+
+    # Obtener contexto del usuario
+    reminders = db.get_reminders()
+    notes = db.get_notes(limit=10)
+    birthdays = db.get_upcoming_birthdays(days=90)
+
+    context_data = {
+        'reminders': '\n'.join([f"- {r['title']} ({r.get('due_datetime', 'N/A')})" for r in reminders[:5]]) or "Ninguna",
+        'notes': '\n'.join([f"- {n['title']}" for n in notes[:5]]) or "Ninguna",
+        'birthdays': '\n'.join([f"- {b['name']} ({b['birth_date']})" for b in birthdays[:5]]) or "Ninguno"
+    }
+
+    await update.message.reply_text("⏳ Procesando tu pregunta...", parse_mode='Markdown')
+
+    answer = await ask_assistant(question, context_data)
+
+    if answer:
+        await update.message.reply_text(f"🤖 *Respuesta:*\n\n{answer}", parse_mode='Markdown')
+    else:
+        await update.message.reply_text("❌ No pude procesar tu pregunta. Intenta de nuevo.")
+
+
+async def cmd_analizar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Análisis inteligente de tareas y notas."""
+    if not authorized(update):
+        return await deny(update)
+
+    if not is_gemini_available():
+        await update.message.reply_text(
+            "❌ Gemini no está configurado. Verifica que GEMINI_API_KEY esté en el .env"
+        )
+        return
+
+    await update.message.reply_text("⏳ Analizando tus tareas y notas...", parse_mode='Markdown')
+
+    reminders = db.get_reminders()
+    notes = db.get_notes(limit=15)
+
+    tasks_summary = None
+    notes_summary = None
+
+    if reminders:
+        tasks_summary = await summarize_tasks(reminders)
+
+    if notes:
+        notes_summary = await analyze_notes(notes)
+
+    response = "📊 *Análisis Inteligente:*\n\n"
+
+    if tasks_summary:
+        response += f"📋 *Tareas:*\n{tasks_summary}\n\n"
+    else:
+        response += "📋 No tienes tareas pendientes.\n\n"
+
+    if notes_summary:
+        response += f"📝 *Notas:*\n{notes_summary}"
+    else:
+        response += "📝 No tienes notas guardadas."
+
+    await update.message.reply_text(response, parse_mode='Markdown')
+
+
+async def cmd_gemini_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Ayuda sobre funciones de Gemini."""
+    if not authorized(update):
+        return await deny(update)
+
+    status = "✅ Disponible" if is_gemini_available() else "❌ No configurado"
+
+    text = (
+        f"🤖 *Comandos con Gemini AI:* {status}\n\n"
+        "*/pregunta [tu pregunta]* — Asistente inteligente\n"
+        "Ejemplo: `/pregunta ¿Qué tareas tengo pendientes?`\n\n"
+        "*/analizar* — Análisis de tus tareas y notas\n"
+        "Te da insights sobre tu productividad.\n\n"
+        "*/gemini_help* — Este mensaje"
+    )
+
+    await update.message.reply_text(text, parse_mode='Markdown')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURACIÓN Y ARRANQUE DEL BOT
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1401,7 +1515,10 @@ def build_app() -> Application:
     app.add_handler(CommandHandler('historial', cmd_historial))
     app.add_handler(CommandHandler('notas',     cmd_notas))
     app.add_handler(CommandHandler('cumples',   cmd_cumples))
-    app.add_handler(CommandHandler('auth',    cmd_auth))
+    app.add_handler(CommandHandler('auth',      cmd_auth))
+    app.add_handler(CommandHandler('pregunta',  cmd_pregunta))
+    app.add_handler(CommandHandler('analizar',  cmd_analizar))
+    app.add_handler(CommandHandler('gemini_help', cmd_gemini_help))
 
     # Callbacks del menú principal y de "completado"
     app.add_handler(CallbackQueryHandler(cb_done,      pattern='^done_'))
@@ -1426,19 +1543,22 @@ def build_app() -> Application:
 
 async def set_commands(app: Application):
     await app.bot.set_my_commands([
-        BotCommand('start',   'Menú principal'),
-        BotCommand('nueva',   'Crear tarea, cita, nota o cumpleaños'),
-        BotCommand('tarea',   'Nueva tarea rápida'),
-        BotCommand('cita',    'Nueva cita (Google Calendar)'),
-        BotCommand('nota',    'Guardar una nota'),
-        BotCommand('cumple',  'Registrar cumpleaños'),
-        BotCommand('hoy',     'Agenda de hoy'),
-        BotCommand('ver',     'Todos los pendientes'),
-        BotCommand('notas',   'Ver tus notas'),
-        BotCommand('buscar',  'Buscar en notas'),
-        BotCommand('cumples', 'Cumpleaños próximos'),
-        BotCommand('auth',    'Conectar con Google'),
-        BotCommand('ayuda',   'Ayuda'),
+        BotCommand('start',        'Menú principal'),
+        BotCommand('nueva',        'Crear tarea, cita, nota o cumpleaños'),
+        BotCommand('tarea',        'Nueva tarea rápida'),
+        BotCommand('cita',         'Nueva cita (Google Calendar)'),
+        BotCommand('nota',         'Guardar una nota'),
+        BotCommand('cumple',       'Registrar cumpleaños'),
+        BotCommand('hoy',          'Agenda de hoy'),
+        BotCommand('ver',          'Todos los pendientes'),
+        BotCommand('notas',        'Ver tus notas'),
+        BotCommand('buscar',       'Buscar en notas'),
+        BotCommand('cumples',      'Cumpleaños próximos'),
+        BotCommand('pregunta',     '🤖 Asistente inteligente'),
+        BotCommand('analizar',     '📊 Análisis de productividad'),
+        BotCommand('gemini_help',  '🤖 Ayuda de Gemini'),
+        BotCommand('auth',         'Conectar con Google'),
+        BotCommand('ayuda',        'Ayuda'),
     ])
 
 
