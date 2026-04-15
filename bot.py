@@ -1349,7 +1349,7 @@ async def cmd_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE):
     question = ' '.join(context.args)
 
     # Obtener contexto del usuario
-    reminders = db.get_reminders()
+    reminders = db.get_pending_reminders()
     notes = db.get_notes(limit=10)
     birthdays = db.get_upcoming_birthdays(days=90)
 
@@ -1382,7 +1382,7 @@ async def cmd_analizar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("⏳ Analizando tus tareas y notas...", parse_mode='Markdown')
 
-    reminders = db.get_reminders()
+    reminders = db.get_pending_reminders()
     notes = db.get_notes(limit=15)
 
     tasks_summary = None
